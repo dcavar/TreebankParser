@@ -30,3 +30,17 @@
 *.exe
 *.out
 *.app
+
+# Mac
+.DS_Store
+
+# Local excludes
+.idea/
+*.log
+*.bak
+*.o
+TestPCFG
+*.l-e
+*.aux
+*.y-e
+*.dSYM/

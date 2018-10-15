@@ -1,0 +1,9 @@
+
+( (IP-HLN (NP-SBJ (NN 外商)
+		  (NN 投资)
+		  (NN 企业))
+	  (VP (VV 成为)
+	      (NP-OBJ (NP (NP-PN (NR 中国))
+			  (NP (NN 外贸)))
+		      (ADJP (JJ 重要))
+		      (NP (NN 增长点))))) )
