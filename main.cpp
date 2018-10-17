@@ -72,7 +72,7 @@ void usage() {
 }
 
 
-void usage(po::options_description desc) {
+void usage(po::options_description const &desc) {
     usage();
     cout << desc << endl;
 }
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
         }
     } catch (exception &e) { // Catch command line error
         string message = e.what();
-        if (message.size()) {
+        if (!message.empty()) {
             cerr << "Error: " << message << endl;
         }
         usage();
@@ -152,11 +152,11 @@ int main(int argc, char *argv[]) {
         return ERROR_UNHANDLED_EXCEPTION;
     }
 
-    if (processfiles.size() > 0) {
-        if (myTP.grammarfile.size() > 0) // load grammar
+    if (!processfiles.empty()) {
+        if (!myTP.grammarfile.empty()) // load grammar
             myTP.loadGrammar(myTP.grammarfile);
         myTP.processFiles(processfiles); // process files one by one
-        if (myTP.grammarfile.size() > 0) {
+        if (!myTP.grammarfile.empty()) {
             myTP.saveToFile(myTP.grammarfile);
         } else {
             myTP.printToStdout();
