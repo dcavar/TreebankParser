@@ -30,10 +30,8 @@
  * \bug None
  */
 
-
 #ifndef PCFG_TREEBANKPARSER_H
 #define PCFG_TREEBANKPARSER_H
-
 
 #include <iostream>
 #include <fstream>
@@ -44,12 +42,12 @@
 #include <utility>
 #include <numeric>
 #include <set>
+#include <regex>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
-
+#include <boost/lexical_cast.hpp>
 
 using namespace std;
-
 
 class TreebankParser {
 
@@ -62,11 +60,11 @@ public:
 
     bool parseBrackets(string content);
 
-    void saveToFile(string fname, bool writeterminalrules);
+    void saveToFile(string fname);
 
-    void printToStream(bool writeterminalrules, ostream &buf);
+    void printToStream(ostream &buf);
 
-    void printToStdout(bool writeterminalrules);
+    void printToStdout();
 
     void loadGrammar(string fname);
 
@@ -76,15 +74,16 @@ public:
 
     string rootsymbol;
 
+    bool skipterminals = false;
+
     bool relcounts = false; // relative frequencies
 
     bool symbolcounts = false ; // count the frequency of the LHS symbol rather than the rule
 
-    set<unsigned long> terminalRules;
+    set<vector<string>> terminalRules;
 
     map<vector<string>, unsigned long> rules;
 
 };
-
 
 #endif //PCFG_TREEBANKPARSER_H

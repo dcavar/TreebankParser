@@ -1,14 +1,10 @@
 # PCFG BNFC
 
-First Created: 2016-03-04 by [Damir Cavar] <[dcavar@iu.edu](mailto:dcavar@iu.edu)>
-
-(C) 2016-2018 by [Damir Cavar]
-
+Created: 2016-03-04 by Damir Cavar <[dcavar@iu.edu](mailto:dcavar@iu.edu)>
 
 This code and the binaries are made available under the
 [Apache License, Version 2.0, January 2004](http://www.apache.org/licenses/). For details see the included
 *LICENSE.txt* file.
-
 
 
 ## Building
@@ -21,7 +17,7 @@ To build the documentation and parser code run:
 ## Description
 
 This BNF defines a more complex PCFG-rule formalism than actually is used by
-TreeBankParserSA and other tools that I developed for PCFG generation and processing. See the included *test.txt* grammar example. The parser
+TreeBankParserSA. See the included *test.txt* grammar example. The parser
 can processes a relative-frequency grammar that makes use of rules using
 the following notation:
 
@@ -37,7 +33,5 @@ rules, it will through an error, i.e. fail to parse the grammar file.
 
 # Repairing bugs
 
-The *build.sh* script uses [BNFC] to build the LaTeX and PDF documentation and generate the C++ clases. Various issues with the [BNFC] code generation of the flex and bison code are caught and repaired as well. New versions of [BNFC] might not generate the issues. Remove the *sed* lines in *build.sh*, if the attempted repairs are causing problems.
+The *build.sh* script uses BNFC to build the LaTeX and PDF documentation and generate the C++ clases. Various issues with the BNFC code generation of the flex and bison code are caught and repaired as well. New versions of BNFC might not generate the issues. Remove the *sed* lines in *build.sh*, if the attempted repairs are causing problems.
 
-[Damir Cavar]: http://damir.cavar.me/ "Damir Cavar"
-[BNFC]: https://bnfc.digitalgrammars.com/ "BNF Converter"

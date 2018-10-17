@@ -5,13 +5,13 @@
  *
  * \author Damir Cavar &lt;dcavar@iu.edu&gt;
  *
- * \version 0.1
+ * \version 0.2
  *
- * \date 2016/09/10 16:20:00
+ * \date 2018/10/12 14:18:00
  *
  * \date Created on: Mon September 10 16:20:00 2016
  *
- * \copyright Copyright 2016 by Damir Cavar
+ * \copyright Copyright 2016-2018 by Damir Cavar
  *
  * \license{Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ TreebankParser::TreebankParser() {
 
 
 TreebankParser::~TreebankParser() {
-
 }
 
 
@@ -67,16 +66,49 @@ void TreebankParser::processFiles(vector<string> treebankfiles) {
             cout << "Error: Bracket mismatch in file: " << filename << "! Skipping..." << endl;
         }
     }
+    // keep track of terminal rules
+    tagTerminalRules();
 }
 
 
 void TreebankParser::loadGrammar(string fname) {
+    ifstream ipf;
+    ipf.exceptions(ifstream::failbit | ifstream::badbit);
+    stringstream strbuffer;
+
+    try {
+        ipf.open(fname.c_str(), ios::in);
+        if (ipf.is_open()) {
+            while (!ipf.eof()) {
+                ipf >> strbuffer.rdbuf();
+            }
+        }
+    } catch (ifstream::failure e) {
+        cout << "Cannot read grammar file " << fname << "! Skipping..." << endl;
+    }
+    ipf.close();
 
 }
 
 
 void TreebankParser::tagTerminalRules() {
-
+    set<string> lhssymbols;
+    for (auto const rule : rules) {
+        lhssymbols.insert(rule.first[0]);
+    }
+    bool lhssymfound = false;
+    for (auto const rule : rules) {
+        lhssymfound = false;
+        for (unsigned long i = 1; i < rule.first.size(); ++i) {
+            if (lhssymbols.find(rule.first[i]) != lhssymbols.end()) {
+                lhssymfound = true;
+                break;
+            }
+        }
+        if (!lhssymfound) { // save to set of terminal rules
+            terminalRules.insert(rule.first);
+        }
+    }
 }
 
 
@@ -93,15 +125,15 @@ bool TreebankParser::parseBrackets(string content) {
             continue;
         }
         if (content[i] == ')') {
-            unsigned long count = opening.size();
+            const unsigned long count = opening.size();
             if (count > 0) {
-                unsigned long from = opening[count - 1];
+                const unsigned long from = opening[count - 1];
                 string subtree = content.substr(from + 1, i - from - 1);
                 // store level information for each parsed bracket,
                 // when hitting closing check whether it is closing with bracketed structure inside,
                 // fetch all children from the level below and generate RHS
                 // if there is no ( or ) this is a terminal
-                unsigned long pos = subtree.find("(");
+                const unsigned long pos = subtree.find("(");
                 if (pos != string::npos) {
                     // the node label is LHS and all daughters from level +1 are RHS
                     int level = opening.size();
@@ -112,7 +144,7 @@ bool TreebankParser::parseBrackets(string content) {
                     boost::split(strs, res, boost::is_any_of(" "));
                     // if root level and no symbol, use rootsymbol from command line or default
                     if ((level == 1) & (strs.size() == 1) & !strs[0].size()) {
-                        strs = vector<string>( {rootsymbol} );
+                        strs = vector<string>({rootsymbol});
                     }
                     auto const i = levels.find(level + 1);
                     if (i != levels.end()) {
@@ -163,29 +195,21 @@ bool TreebankParser::parseBrackets(string content) {
             }
         }
     }
-    /*for (auto const &elem : rules) {
-        cout << elem.second << " " << elem.first[0] << " --> ";
-        for (int i = 1; i < elem.first.size(); ++i) {
-            cout << elem.first[i] << " ";
-        }
-        cout << endl;
-    } */
     return (true);
 }
 
 
-void TreebankParser::saveToFile(string fname, bool writeterminalrules) {
+void TreebankParser::saveToFile(string fname) {
     // create backup of old grammar file
     if (boost::filesystem::exists(fname)) {
-        if (boost::filesystem::is_regular_file(fname)) {
+        if (boost::filesystem::is_regular_file(fname))
             boost::filesystem::rename(fname, fname + ".bak");
-        }
     }
     try {
         ofstream fout;
         fout.open(fname);
         ostream *fp = &fout;
-        printToStream(writeterminalrules, *fp);
+        printToStream(*fp);
         fout.flush();
         fout.close();
     } catch (ifstream::failure e) {
@@ -194,35 +218,56 @@ void TreebankParser::saveToFile(string fname, bool writeterminalrules) {
 }
 
 
-void TreebankParser::printToStdout(bool writeterminalrules) {
+void TreebankParser::printToStdout() {
     ostream *fp = &cout;
-    printToStream(writeterminalrules, *fp);
+    printToStream(*fp);
 }
 
 
-void TreebankParser::printToStream(bool writeterminalrules, ostream &buf) {
-    const double total = accumulate(begin(rules),
-                                    end(rules),
+void TreebankParser::printToStream(ostream &buf) {
+    map<vector<string>, unsigned long> prules;
+    for (auto const rule : rules) {
+        if (skipterminals) {
+            if (terminalRules.find(rule.first) == terminalRules.end()) {
+                prules.insert(rule);
+            }
+        } else {
+            prules.insert(rule);
+        }
+    }
+
+    const double total = accumulate(begin(prules),
+                                    end(prules),
                                     0,
                                     [](const unsigned long previous,
                                        const pair<vector<string>, unsigned long> &rule) {
                                         return previous + rule.second;
                                     });
     unsigned long len;
-    for (auto const &rule : rules) {
-        if (relcounts)
-            buf << double(rule.second) / total;
+    for (
+        auto const &rule :
+            prules) {
+        if (relcounts) // print double using Boost lexical_cast
+            buf <<
+                boost::lexical_cast<string>(rule
+                                                    .second / total);
         else
-            buf << rule.second;
+            buf << rule.
+                    second;
+
         buf << "\t" << rule.first[0] << " --> ";
         len = rule.first.size();
         if (len > 2) {
-            for (unsigned long i = 1; i < len - 1; ++i) {
+            for (
+                    unsigned long i = 1;
+                    i < len - 1; ++i) {
                 buf << rule.first[i] << " ";
             }
-            buf << rule.first[len - 1] << endl;
+            buf << rule.first[len - 1] <<
+                endl;
         } else {
-            buf << rule.first[1] << endl;
+            buf << rule.first[1] <<
+                endl;
         }
     }
 }

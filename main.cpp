@@ -5,13 +5,13 @@
  *
  * \author Damir Cavar &lt;dcavar@iu.edu&gt;
  *
- * \version 0.1
+ * \version 0.2
  *
- * \date 2016/09/10 16:20:00
+ * \date 2018/10/12 14:08:00
  *
  * \date Created on: Mon September 10 16:20:00 2016
  *
- * \copyright Copyright 2016 by Damir Cavar
+ * \copyright Copyright 2016-2018 by Damir Cavar
  *
  * \license{Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,15 +56,8 @@ namespace {
 const char _prog_fullname[] = "Probabilistic Grammar Parser";
 const char _prog_name[] = "pcfgparser";
 const int _version_major = 0;
-const int _version_minor = 1;
+const int _version_minor = 2;
 
-
-void usage();
-
-void usage(po::options_description desc) {
-    usage();
-    cout << desc << endl;
-}
 
 /*! \fn void usage( )
     \brief Print out the usage.
@@ -72,10 +65,16 @@ void usage(po::options_description desc) {
     Prints out the copyright without option descriptions.
 */
 void usage() {
-    cout << _prog_fullname << " (" << _prog_name << ") Version " << _version_major << "." << _version_minor << endl
-         << "Usage: treebankparser [TREEBANK_FILES]..." << endl << endl
-         << "For help:" << endl << "fle --help" << endl << endl
-         << "(C) 2016 by Damir Cavar <dcavar@iu.edu>" << endl << endl;
+    cout << "Usage: treebankparser [TREEBANK_FILES]..." << endl << endl
+         << "For help:" << endl << "treebankparser --help" << endl << endl
+         << "(C) 2016-2018 by Damir Cavar <dcavar@iu.edu>" << endl
+         << "    Apache License, Version 2.0" << endl << endl;
+}
+
+
+void usage(po::options_description desc) {
+    usage();
+    cout << desc << endl;
 }
 
 
@@ -91,10 +90,11 @@ int main(int argc, char *argv[]) {
                 ("absolute,a", "return absolute counts")
                 ("relative,r", "return relative counts or probabilities for rules")
                 ("symbolcounts,s", "return relative counts or probabilities for rules")
+                ("skipterminalrules,t", "do not write out terminal rules")
                 ("rootsymbol,y", po::value<string>(), "symbol for empty tree roots")
                 ("grammar,g", po::value<string>(), "use grammar")
                 ("quiet,q", "Quiet operations")
-                ("version,v", po::value<string>(), "Print version information")
+                ("version,v", "Print version information")
                 ("input-files", po::value<vector<string>>(), "Sentences");
 
         po::positional_options_description p;
@@ -102,7 +102,6 @@ int main(int argc, char *argv[]) {
 
         po::variables_map vm;
         po::store(po::command_line_parser(argc, (const char *const *) argv).options(desc).positional(p).run(), vm);
-        //po::store(po::command_line_parser(argc, (const char *const *) argv).options(desc).run(), vm);
         po::notify(vm);
 
         if (vm.count("help")) {
@@ -130,13 +129,15 @@ int main(int argc, char *argv[]) {
         if (vm.count("rootsymbol")) {
             myTP.rootsymbol = vm["rootsymbol"].as<string>();
         }
+        if (vm.count("skipterminalrules")) {
+            myTP.skipterminals = true;
+        }
         if (vm.count("grammar")) {
             myTP.grammarfile = vm["grammar"].as<string>();
             if (!quiet)
                 cout << "Load grammar: " << myTP.grammarfile << endl;
         }
         if (vm.count("input-files")) {
-            // only load the grammar, if there is some input to parse
             processfiles = vector<string>(vm["input-files"].as<vector<string>>());
         }
     } catch (exception &e) { // Catch command line error
@@ -151,19 +152,17 @@ int main(int argc, char *argv[]) {
         return ERROR_UNHANDLED_EXCEPTION;
     }
 
-    /* if (grammar_file.size() == 0) {
-        cout << "Please provide a grammar using command line parameters." << endl << endl;
-        usage();
-        return ERROR_IN_COMMAND_LINE;
-    } */
-
     if (processfiles.size() > 0) {
-        // load grammar
-        if (myTP.grammarfile.size() > 0)
+        if (myTP.grammarfile.size() > 0) // load grammar
             myTP.loadGrammar(myTP.grammarfile);
-        // process files one by one
-        myTP.processFiles(processfiles);
-        myTP.printToStdout(false);
+        myTP.processFiles(processfiles); // process files one by one
+        if (myTP.grammarfile.size() > 0) {
+            myTP.saveToFile(myTP.grammarfile);
+        } else {
+            myTP.printToStdout();
+        }
+    } else {
+        usage();
     }
     return SUCCESS;
 
