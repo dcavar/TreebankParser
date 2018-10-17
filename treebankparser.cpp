@@ -40,8 +40,7 @@ TreebankParser::TreebankParser() {
 }
 
 
-TreebankParser::~TreebankParser() {
-}
+TreebankParser::~TreebankParser() = default;
 
 
 void TreebankParser::processFiles(vector<string> treebankfiles) {
@@ -50,7 +49,7 @@ void TreebankParser::processFiles(vector<string> treebankfiles) {
     ipf.exceptions(ifstream::failbit | ifstream::badbit);
     stringstream strbuffer;
 
-    for (auto filename : treebankfiles) {
+    for (auto &filename : treebankfiles) {
         try {
             ipf.open(filename.c_str(), ios::in);
             if (ipf.is_open()) {
@@ -58,7 +57,7 @@ void TreebankParser::processFiles(vector<string> treebankfiles) {
                     ipf >> strbuffer.rdbuf();
                 }
             }
-        } catch (ifstream::failure e) {
+        } catch (ifstream::failure &e) {
             cout << "Cannot read file " << filename << "! Skipping..." << endl;
         }
         ipf.close();
@@ -83,7 +82,7 @@ void TreebankParser::loadGrammar(string fname) {
                 ipf >> strbuffer.rdbuf();
             }
         }
-    } catch (ifstream::failure e) {
+    } catch (ifstream::failure &e) {
         cout << "Cannot read grammar file " << fname << "! Skipping..." << endl;
     }
     ipf.close();
@@ -93,11 +92,11 @@ void TreebankParser::loadGrammar(string fname) {
 
 void TreebankParser::tagTerminalRules() {
     set<string> lhssymbols;
-    for (auto const rule : rules) {
+    for (auto const &rule : rules) {
         lhssymbols.insert(rule.first[0]);
     }
     bool lhssymfound = false;
-    for (auto const rule : rules) {
+    for (auto const &rule : rules) {
         lhssymfound = false;
         for (unsigned long i = 1; i < rule.first.size(); ++i) {
             if (lhssymbols.find(rule.first[i]) != lhssymbols.end()) {
@@ -133,27 +132,27 @@ bool TreebankParser::parseBrackets(string content) {
                 // when hitting closing check whether it is closing with bracketed structure inside,
                 // fetch all children from the level below and generate RHS
                 // if there is no ( or ) this is a terminal
-                const unsigned long pos = subtree.find("(");
+                const unsigned long pos = subtree.find('(');
                 if (pos != string::npos) {
                     // the node label is LHS and all daughters from level +1 are RHS
-                    int level = opening.size();
+                    unsigned long level = opening.size();
                     // get the string between the ( and the next (
                     vector<string> strs;
                     string res = subtree.substr(0, pos);
                     boost::trim(res);
                     boost::split(strs, res, boost::is_any_of(" "));
                     // if root level and no symbol, use rootsymbol from command line or default
-                    if ((level == 1) & (strs.size() == 1) & !strs[0].size()) {
+                    if ((level == 1) & (strs.size() == 1) & strs[0].empty()) {
                         strs = vector<string>({rootsymbol});
                     }
-                    auto const i = levels.find(level + 1);
-                    if (i != levels.end()) {
-                        vector<string> tmp = i->second;
+                    auto const j = levels.find((int)level + 1);
+                    if (j != levels.end()) {
+                        vector<string> tmp = j->second;
                         for (auto const &rhs : tmp) {
                             strs.push_back(rhs);
                         }
                     }
-                    levels.erase(level + 1); // remove the daughters
+                    levels.erase((int)level + 1); // remove the daughters
                     vector<string> tmp;
                     tmp.push_back(strs[0]);
                     // push back the daughter for this node onto the level
@@ -168,7 +167,7 @@ bool TreebankParser::parseBrackets(string content) {
                     // this is a tag with terminal
                     vector<string> strs;
                     boost::split(strs, subtree, boost::is_any_of(" "));
-                    if (strs.size() > 0) {
+                    if (!strs.empty()) {
                         // add to rules and count
                         auto const ruleIt = rules.find(strs);
                         unsigned long val = 0;
@@ -178,11 +177,11 @@ bool TreebankParser::parseBrackets(string content) {
                         rules[strs] = ++val;
 
                         vector<string> tmp;
-                        int level = opening.size();
+                        unsigned long level = opening.size();
 
-                        auto const i = levels.find(level);
-                        if (i != levels.end())
-                            tmp = i->second;
+                        auto const j = levels.find((int)level);
+                        if (j != levels.end())
+                            tmp = j->second;
 
                         // add only the left-hand-side symbol to the buffer
                         tmp.push_back(strs[0]);
@@ -212,7 +211,7 @@ void TreebankParser::saveToFile(string fname) {
         printToStream(*fp);
         fout.flush();
         fout.close();
-    } catch (ifstream::failure e) {
+    } catch (ifstream::failure &e) {
         cout << "Error writing to file " << fname << endl;
     }
 }
@@ -226,7 +225,7 @@ void TreebankParser::printToStdout() {
 
 void TreebankParser::printToStream(ostream &buf) {
     map<vector<string>, unsigned long> prules;
-    for (auto const rule : rules) {
+    for (auto const &rule : rules) {
         if (skipterminals) {
             if (terminalRules.find(rule.first) == terminalRules.end()) {
                 prules.insert(rule);
